@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="compile">
+
+	<property name="base.dir"					value="${basedir}/.." />
+	<property name="gcmscript.classes.dir"		value="${base.dir}/classes" />
+	<property name="gcmscript.cl.extra.dir"		value="${gcmscript.classes.dir}/Extra" />
+	<property name="gcmscript.cl.test.dir"		value="${gcmscript.classes.dir}/Tests" />
+	<property name="gcmscript.compile.dir"		value="${base.dir}/compile" />
+	<property name="gcmscript.deploy.dir"		value="${base.dir}/dist" />
+	<property name="gcmscript.deploy.lib.dir"	value="${gcmscript.deploy.dir}/lib" />
+	<property name="gcmscript.junit.dir"		value="${base.dir}/junitReports" />
+	<property name="gcmscript.lib.dir"			value="${base.dir}/lib" />
+	<property name="gcmscript.src.dir"			value="${base.dir}/src" />
+	<property name="gcmscript.src.extra.dir"	value="${gcmscript.src.dir}/Extra" />
+	<property name="gcmscript.src.test.dir"		value="${gcmscript.src.dir}/Tests" />
+	<property name="proactive.compile.dir"		value="${proactive.dir}/compile" />
+	<property name="proactive.dev.dir"			value="${proactive.dir}/dev" />
+	<property name="proactive.lib.dir"			value="${proactive.dir}/dist/lib" />
+
+	<!-- Javac properties -->
+	<property name="debug" value="on" />
+	<property name="source" value="1.5" />
+
+	<!-- junit properties -->
+	<property name="junit.showoutput" value="false"/>
+
+
+	<!-- ================================================================ -->
+	<!--                   define the different classpaths                -->
+	<!--  =============================================================== -->
+
+	<path id="gcmscript.compile.libs">
+		<fileset dir="${proactive.lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${gcmscript.lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<path id="gcmscript.deploy.classpath">
+		<fileset dir="${proactive.lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${gcmscript.deploy.lib.dir}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="gcmscript.test.classpath">
+		<path refid="gcmscript.deploy.classpath"/>
+		<pathelement location="${proactive.compile.dir}/lib/junit-4.8.2.jar"/>
+		<pathelement location="${gcmscript.cl.test.dir}/" />
+		<pathelement location="${java.home}/../lib/tools.jar" />
+	</path>
+
+	<path id="gcmscript.classpath">
+		<pathelement location="${gcmscript.cl.extra.dir}" />
+		<pathelement location="${gcmscript.cl.test.dir}"/>
+		<path refid="gcmscript.compile.libs" />
+	</path>
+
+</project>

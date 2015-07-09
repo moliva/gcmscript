@@ -1,0 +1,97 @@
+-- Define more convenient aliases for procedures which are automatically defined (and named) from the model.
+
+action kill-deployment(gcma) {
+	set-state($gcma, "KILLED");
+}
+
+action kill(comp) {
+	set-state($comp, "KILLED");
+}
+
+action start-monitoring(comp) {
+	set-monitoring($comp, "STARTED");
+}
+
+action stop-monitoring(comp) {
+	set-monitoring($comp, "STOPPED");
+}
+
+action reset-monitoring(comp) {
+	set-monitoring($comp, "RESET");
+}
+
+action bind(clItf, srvItf) {
+	for itf : $srvItf {
+		add-binding($clItf, $itf);
+	}
+}
+
+action unbind(clItf) {
+	for itf : $clItf/binding::* {
+		remove-binding($clItf, $itf);
+	}
+}
+
+action unbind-unit(clItf, srvItf) {
+	remove-binding($clItf, $srvItf);
+}
+
+action rexecute(comp, source) {
+	remote-execute($comp, $source);
+}
+
+action rget-globals(comp) {
+	remote-get-globals($comp);
+}
+
+action rload(comp) {
+	remote-load($comp, $source);
+}
+
+
+-- Core functions which could have been written in Java but are done here to keep the code base smaller.
+
+function is-ready(gcmvn) {
+	return (state($gcmvn) == "READY");
+}
+
+function monitoring-started(comp) {
+	return (monitoring($comp) == "STARTED");
+}
+
+function monitoring-stopped(comp) {
+	return (monitoring($comp) == "STOPPED");
+}
+
+function single(itf) {
+	return not(collection($itf)) && not(multicast($itf)) && not(gathercast($itf));
+}
+
+function collective(itf) {
+	return multicast($itf) || gathercast($itf);
+}
+
+
+-- General utilities
+
+action replace(oldComp, newComp) {
+	for p : $oldComp/parent::* {
+		add($p, $newComp);
+	}
+	for client : $oldComp/interface::*[client(.)][bound(.)] {
+		itfName = name($client);
+		server = $client/binding::*;
+		unbind($client);
+		bind($newComp/interface::$itfName, $server);
+	}
+	for client : bindings-to($oldComp) {
+		itfName = name($client/binding::*);
+		unbind-unit($client, $oldComp/interface::$itfName);
+		bind($client, $newComp/interface::$itfName);
+	}
+	copy-attributes($oldComp, $newComp);
+	copy-state($oldComp, $newComp);
+	for p : $oldComp/parent::* {
+		remove($p, $oldComp);
+	}
+}

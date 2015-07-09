@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE definition PUBLIC "-//objectweb.org//DTD Fractal ADL 2.0//EN" "classpath://org/objectweb/proactive/core/component/adl/xml/proactive.dtd">
+
+<definition name="functionalTests.component.fscript.model.components.adl.Composite">
+	<interface role="server" name="service-server" signature="functionalTests.component.fscript.model.components.ServiceMulticast"/>
+	<interface role="client" name="service-client" contingency="optional" signature="functionalTests.component.fscript.model.components.ServiceWS1"/>
+
+	<component name="master" definition="functionalTests.component.fscript.model.components.adl.Master"/>
+	<component name="worker1" definition="functionalTests.component.fscript.model.components.adl.Worker1"/>
+	<component name="worker2" definition="functionalTests.component.fscript.model.components.adl.Worker2"/>
+	<component name="collector" definition="functionalTests.component.fscript.model.components.adl.Collector"/>
+
+	<binding client="this.service-server" server="master.service-server"/>
+	<binding client="master.service-client" server="worker1.service-server"/>
+	<binding client="master.service-client" server="worker2.service-server"/>
+	<binding client="worker1.service-client" server="collector.service-server"/>
+	<binding client="worker2.service-client" server="collector.service-server"/>
+
+	<controller desc="/org/objectweb/proactive/extra/component/fscript/config/gcmscript-component-config.xml"/>
+
+	<virtual-node name="VN1"/>
+</definition>

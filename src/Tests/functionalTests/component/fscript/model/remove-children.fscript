@@ -1,0 +1,11 @@
+action remove-children(comp) {
+	for c : $comp/child::* {
+		for client : $c/interface::*[client(.)][bound(.)] {
+			unbind($client);
+		}
+		for client : bindings-to($c) {
+			unbind($client);
+		}
+		remove($comp, $c);
+	}
+}

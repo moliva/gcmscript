@@ -1,0 +1,42 @@
+#!/bin/bash
+#build file for Unix system
+
+DIRNAME=$(cd `dirname $0` && /bin/pwd)
+
+cd "$DIRNAME/.."
+
+JAVA_HOME=${JAVA_HOME-NULL};
+if [ "$JAVA_HOME" = "NULL" ]
+then
+    echo
+    echo "The environment variable JAVA_HOME must be set to the current JDK distribution"
+    echo "installed on your computer."
+    echo "Use "
+    echo "    export JAVA_HOME=<the directory where is the JDK>"
+    exit 127
+fi
+
+
+PROACTIVE_HOME=${PROACTIVE_HOME-NULL};
+if [ "$PROACTIVE_HOME" = "NULL" ]
+then
+    echo
+    echo "The environment variable PROACTIVE_HOME must be set to the current ProActive Programming source folder"
+    echo "installed on your computer."
+    echo "Use "
+    echo "    export PROACTIVE_HOME=<the directory where is ProActive Programming>"
+    exit 127
+fi
+
+if [ $# -lt 1 ]
+then
+  args="-projecthelp"
+else
+  args=$@
+fi
+
+trap "echo $args | grep -c junit > /dev/null && dev/scripts/killTests" SIGINT SIGTERM
+
+COMPILEDIR=$PROACTIVE_HOME/compile
+
+ANT_HOME="$COMPILEDIR" "$JAVA_HOME"/bin/java  -Dant.home="$COMPILEDIR" -Dant.library.dir="$COMPILEDIR/lib" -Dproactive.dir="$PROACTIVE_HOME" -Xmx512000000 -classpath "$COMPILEDIR"/lib/ant-launcher.jar org.apache.tools.ant.launch.Launcher -buildfile compile/build.xml $args

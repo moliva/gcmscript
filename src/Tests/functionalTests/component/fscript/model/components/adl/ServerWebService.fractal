@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE definition PUBLIC "-//objectweb.org//DTD Fractal ADL 2.0//EN" "classpath://org/objectweb/proactive/core/component/adl/xml/proactive.dtd">
+
+<definition name="functionalTests.component.fscript.model.components.adl.ServerWebService">
+	<interface role="server" name="service1" signature="functionalTests.component.fscript.model.components.ServiceWS1"/>
+	<interface role="server" name="service2" signature="functionalTests.component.fscript.model.components.ServiceWS2"/>
+
+	<content class="functionalTests.component.fscript.model.components.ServerWSImpl"/>
+
+	<attributes signature="functionalTests.component.fscript.model.components.ServiceAttributes">
+		<attribute name="id" value="S"/>
+		<attribute name="separator" value=">"/>
+	</attributes>
+
+	<controller desc="/org/objectweb/proactive/extensions/webservices/cxf/component/controller/cxf-component-config.xml"/>
+
+	<virtual-node name="VN1"/>
+</definition>

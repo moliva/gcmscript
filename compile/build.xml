@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="compile" basedir=".">
+
+	<!--
+		Available properties are:
+			-Dtest='functionalTests/**/*.class'		Override the default testsuite for junit* targets
+			-Dversion="1.2.3"						Tag a build with this version
+	-->
+
+
+	<!-- ************
+		Taskdefs
+	-->
+
+	<taskdef name="if" classname="ise.antelope.tasks.IfTask" />
+
+
+	<!--
+		Create a timestamp for this build
+		If ${version} is defined its value is used as string version for this build
+		Otherwise the timestamp is used
+	-->
+
+	<!-- Version setting example-->
+	<!-- <property name="version" value="1.2.3" /> -->
+	<!-- Release date -->
+	<!-- <property name="release.date" value="1 Jan. 1970" /> -->
+
+	<tstamp>
+		<format property="TODAY" pattern="yyyy-MM-dd" />
+	</tstamp>
+
+	<if name="version">
+		<else>
+			<property name="version" value="${TODAY}" />
+		</else>
+	</if>
+
+
+	<!-- ************
+		Imports
+	-->
+
+	<property file="${user.home}/.proactive/build.properties" />
+	<import file="common.xml" />
+
+
+	<!-- ************
+		Classpath
+	-->
+
+	<!-- Default testsuite can be overriden by using the -Dtest property -->
+	<if name="test">
+		<fileset dir="${gcmscript.cl.test.dir}" id="testsuite">
+			<include name="${test}" />
+		</fileset>
+		<else>
+			<fileset dir="${gcmscript.cl.test.dir}" id="testsuite">
+				<include name="functionalTests/**/**/*Test*.class" />
+			</fileset>
+		</else>
+	</if>
+
+
+	<!-- ************
+		Compilation
+	-->
+
+	<target name="compile" depends="-configurationCopy" description="Compile GCMScript classes">
+		<javac srcdir="${gcmscript.src.extra.dir}" destdir="${gcmscript.cl.extra.dir}" deprecation="on" source="${source}" debug="${debug}">
+			<classpath refid="gcmscript.classpath" />
+			<include name="**/*.java" />
+		</javac>
+	</target>
+
+	<target name="compile.tests" depends="compile" description="Compile functional test classes">
+		<javac srcdir="${gcmscript.src.test.dir}" destdir="${gcmscript.cl.test.dir}" includes="functionalTests/**" deprecation="on" source="${source}" debug="${debug}">
+			<classpath refid="gcmscript.classpath" />
+		</javac>
+
+		<copy toDir="${gcmscript.cl.test.dir}">
+			<fileset dir="${gcmscript.src.test.dir}">
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+
+
+	<!-- ************
+		Deployment
+	-->
+
+	<target name="deploy" depends="compile, -deploy.mkdir" description="Populate dist/ with all the files needed">
+		<concat destfile="${gcmscript.compile.dir}/Manifest.mf">
+			<fileset dir="${gcmscript.compile.dir}" includes="Manifest-base.mf" />
+		</concat>
+
+		<replaceregexp file="${gcmscript.compile.dir}/Manifest.mf" match="\$Id.*\$" replace="${version}" byline="true"  />
+
+		<jar manifest="${gcmscript.compile.dir}/Manifest.mf" destfile="${gcmscript.deploy.lib.dir}/ProActive-GCMScript.jar" index="true">
+			<fileset dir="${gcmscript.cl.extra.dir}">
+				<include name="**" />
+			</fileset>
+			<indexjars>
+				<fileset dir="${gcmscript.lib.dir}">
+					<include name="*.jar" />
+				</fileset>
+			</indexjars>
+		</jar>
+
+		<copy todir="${gcmscript.deploy.lib.dir}">
+			<fileset dir="${gcmscript.lib.dir}">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="-deploy.mkdir">
+		<mkdir dir="${gcmscript.deploy.dir}" />
+		<mkdir dir="${gcmscript.deploy.lib.dir}" />
+	</target>
+
+
+	<!-- ************
+		Testing
+	-->
+
+	<macrodef name="junitMacro">
+		<attribute name="testsuite" />
+
+		<element name="jvmargs" optional="yes" />
+		<element name="additionalClasspath" optional="yes" />
+
+		<sequential>
+			<delete dir="${gcmscript.junit.dir}" />
+			<mkdir dir="${gcmscript.junit.dir}" />
+			<junit printsummary="yes" forkmode="perTest" showoutput="${junit.showoutput}" timeout="300000">
+				<jvmarg value="-Dproactive.home=${proactive.dir}" />
+				<jvmarg value="-Dgcmscript.home=${base.dir}" />
+				<classpath>
+					<path refid="gcmscript.test.classpath" />
+				</classpath>
+				<jvmarg value="-Dproactive.communication.protocol=rmi" />
+				<jvmarg value="-Djava.security.policy=${proactive.compile.dir}/proactive.java.policy" />
+				<jvmarg value="-Dlog4j.configuration=file:${proactive.compile.dir}/proactive-log4j" />
+				<jvmargs />
+				<formatter type="xml" />
+				<batchtest fork="yes" todir="${gcmscript.junit.dir}">
+					<fileset refid="@{testsuite}" />
+				</batchtest>
+			</junit>
+		</sequential>
+	</macrodef>
+
+	<target name="junit" depends="compile.tests, deploy" description="Run all non regression tests on the current host only">
+		<junitMacro testsuite="testsuite" />
+	</target>
+
+
+	<!-- ************
+		Source file handling
+	-->
+
+	<macrodef name="eclipse_format_m">
+		<attribute name="loglevel" default="WARN" />
+		<element name="sourcefileset" optional="false" />
+
+		<sequential>
+			<taskdef name="javaformatter" classname="org.hibernate.tool.ant.JavaFormatterTask">
+				<classpath>
+					<fileset dir="${proactive.dev.dir}/lib">
+						<include name="*.jar" />
+					</fileset>
+				</classpath>
+			</taskdef>
+			<copy file="${proactive.compile.dir}/eclipse_formatter_config.xml" tofile="${gcmscript.compile.dir}/eclipse_formatter_config.properties" />
+			<replaceregexp file="${gcmscript.compile.dir}/eclipse_formatter_config.properties" match='^&lt;(.xml|/?profile).*' replace="" byline="true" />
+			<replaceregexp file="${gcmscript.compile.dir}/eclipse_formatter_config.properties" match='.*\"(.*)\".*\"(.*)\".*' replace="\1=\2" byline="true" />
+			<javaformatter configurationFile="eclipse_formatter_config.properties">
+				<sourcefileset />
+			</javaformatter>
+		</sequential>
+	</macrodef>
+
+	<target name="format" description="eclipse-based formatter">
+		<eclipse_format_m>
+			<sourcefileset>
+				<fileset dir="${gcmscript.src.dir}" includes="**/*.java" />
+			</sourcefileset>
+		</eclipse_format_m>
+	</target>
+
+
+	<target name="check" depends="-init">
+		<delete dir="${gcmscript.classes.dir}/tmp" />
+		<copy todir="${gcmscript.classes.dir}/tmp">
+			<fileset dir="${gcmscript.src.dir}">
+				<include name="**/*.java" />
+			</fileset>
+		</copy>
+
+		<eclipse_format_m>
+			<sourcefileset>
+				<fileset dir="${gcmscript.classes.dir}/tmp">
+					<include name="**/*.java" />
+				</fileset>
+			</sourcefileset>
+		</eclipse_format_m>
+
+		<java resultproperty="check.failed" classname="diff.DiffJavaDir" fork="true" failonerror="false">
+			<classpath refid="gcmscript.classpath" />
+			<arg value="${gcmscript.src.dir}" />
+			<arg value="${gcmscript.classes.dir}/tmp" />
+		</java>
+
+		<delete dir="${gcmscript.classes.dir}/tmp" />
+
+		<if name="check.failed" value="1">
+			<fail message="Please format your source code" />
+		</if>
+	</target>
+
+
+	<!-- ************
+		Misc
+	-->
+
+	<target name="clean" description="Remove all generated files">
+		<delete dir="${gcmscript.classes.dir}" />
+		<delete dir="${gcmscript.deploy.dir}" />
+		<delete dir="${gcmscript.classlibs.dir}" />
+		<delete dir="${gcmscript.test.classes.dir}" />
+		<delete dir="${gcmscript.junit.dir}" />
+	</target>
+
+
+	<target name="-init">
+		<mkdir dir="${gcmscript.classes.dir}" />
+		<mkdir dir="${gcmscript.cl.extra.dir}" />
+		<mkdir dir="${gcmscript.cl.test.dir}" />
+
+		<echo message="--- Debugging is ${debug} ---" />
+	</target>
+
+
+	<target name="-configurationCopy" depends="-init">
+		<copy toDir="${gcmscript.cl.extra.dir}">
+			<fileset dir="${gcmscript.src.extra.dir}">
+				<include name="org/**/*.xml" />
+				<include name="org/**/*.fractal" />
+				<include name="org/**/*.fscript" />
+			</fileset>
+		</copy>
+	</target>
+
+</project>

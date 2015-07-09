@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE definition PUBLIC "-//objectweb.org//DTD Fractal ADL 2.0//EN" "classpath://org/objectweb/proactive/core/component/adl/xml/proactive.dtd">
+
+<definition name="functionalTests.component.fscript.model.components.adl.Collector">
+	<interface role="server" cardinality="gathercast" name="service-server" signature="functionalTests.component.fscript.model.components.ServiceGathercast"/>
+	<interface role="client" name="service-client" contingency="optional" signature="functionalTests.component.fscript.model.components.ServiceWS1"/>
+
+	<content class="functionalTests.component.fscript.model.components.CollectorImpl"/>
+
+	<attributes signature="functionalTests.component.fscript.model.components.ServiceAttributes">
+		<attribute name="id" value="C"/>
+		<attribute name="separator" value=">"/>
+	</attributes>
+
+	<controller desc="/org/objectweb/proactive/extra/component/fscript/config/gcmscript-component-config.xml"/>
+
+	<virtual-node name="VN1"/>
+</definition>
