@@ -1,6 +1,10 @@
+.project
+.classpath
+.settings
 /classes
 /.project
 /dist
 /junitReports
 /compile/eclipse_formatter_config.properties
 /compile/Manifest.mf
+/target/
